@@ -44,6 +44,36 @@ export type StripePrice = {
   unit_amount_decimal: string;
 };
 
+//TODO: typecheck properties which value was temprarily set as null
+export type StripeSession = {
+  id: string,
+  object: string,
+  allow_promotion_codes: boolean | null,
+  amount_subtotal: number | null,
+  amount_total: number | null,
+  billing_address_collection: string | null,
+  cancel_url: string,
+  client_reference_id: string | null,
+  currency: string | null,
+  customer: any,
+  customer_details: any,
+  customer_email: any,
+  livemode: any,
+  locale: any,
+  metadata: any,
+  mode: string,
+  payment_intent: any,
+  payment_method_types: string[],
+  payment_status: string,
+  setup_intent: any,
+  shipping: any,
+  shipping_address_collection: any,
+  submit_type: any,
+  subscription: any,
+  success_url: string,
+  total_details: any
+}
+
 export type LineItem = {
   price_data: {
     currency: string;

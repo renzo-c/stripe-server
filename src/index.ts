@@ -3,7 +3,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import { Stripe } from "stripe";
 import { v4 as uuidv4 } from "uuid";
-import { CartInfo, LineItem, Product, StripePrice } from './types';
+import { CartInfo, LineItem, Product, StripeSession } from './types';
 
 import env from "dotenv";
 
@@ -74,14 +74,9 @@ app.post("/payment", async (req: Request, res: Response, next: NextFunction) => 
 app.post("/create-checkout-session", async (req: Request, res: Response, next: NextFunction) => {
     const { cart } = req.body;
     const lineItems: LineItem[] = [];
-    const defaultHeaders = {Authorization: `Bearer ${process.env.STRIPE_SK}`};
 
     const stripePrices = await stripe.prices.list();
     console.log("stripePrices", stripePrices)
-    // const stripePrices = await fetch(`https://api.stripe.com/v1/prices`, {
-    //     method: "GET",
-    //     headers: new Headers(defaultHeaders),
-    //   }).then((res) => res.json());
 
     const prices = stripePrices.data
     if (!prices || prices.length === 0) return [];
@@ -103,18 +98,19 @@ app.post("/create-checkout-session", async (req: Request, res: Response, next: N
         quantity,
       });
     });
+    console.log("lineItems", lineItems)
 
-    const session = await stripe.checkout.sessions.create({
+    const session: StripeSession = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
       success_url: "https://www.visualdemand.co/?sc_checkout=success",
       cancel_url: "https://www.google.com/?sc_checkout=cancel",
     });
-
     res.json({ id: session.id });
-  }
-);
+    
+    console.log("session", session)
+  });
 
 app.use("/", (req, res, next) => {
   res.json("Thank you...");
