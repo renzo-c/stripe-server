@@ -72,7 +72,7 @@ app.post("/payment", async (req: Request, res: Response, next: NextFunction) => 
 );
 
 app.post("/create-checkout-session", async (req: Request, res: Response, next: NextFunction) => {
-    const { cart } = req.body;
+    const { cart, address, email } = req.body;
     const lineItems: LineItem[] = [];
 
     const stripePrices = await stripe.prices.list();
@@ -106,8 +106,10 @@ app.post("/create-checkout-session", async (req: Request, res: Response, next: N
       mode: "payment",
       success_url: "https://www.visualdemand.co/?sc_checkout=success",
       cancel_url: "https://www.google.com/?sc_checkout=cancel",
+      customer_email: email,
+      metadata: {address}
     });
-    res.json({ id: session.id });
+    res.json({ id: session.id, email: session.customer_email, address: session.metadata!.address });
     
     console.log("session", session)
   });

@@ -60,7 +60,7 @@ export type StripeSession = {
   customer_email: any,
   livemode: any,
   locale: any,
-  metadata: any,
+  metadata: Record<string, any> | null,
   mode: string,
   payment_intent: any,
   payment_method_types: string[],
@@ -71,7 +71,7 @@ export type StripeSession = {
   submit_type: any,
   subscription: any,
   success_url: string,
-  total_details: any
+  total_details: any,
 }
 
 export type LineItem = {
