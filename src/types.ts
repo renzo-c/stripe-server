@@ -84,3 +84,31 @@ export type LineItem = {
   };
   quantity: number;
 };
+
+export type CustomerStripeObj = {
+    id: string,
+    object: any,
+    address: any,
+    balance: number,
+    created: number,
+    currency: any,
+    default_source: string,
+    delinquent: boolean,
+    description: string,
+    discount: any,
+    email: string,
+    invoice_prefix: string,
+    invoice_settings: {
+      custom_fields: any,
+      default_payment_method: any,
+      footer: any
+    },
+    livemode: false,
+    metadata: any,
+    name: any,
+    next_invoice_sequence: number,
+    phone: any,
+    preferred_locales: any,
+    shipping: any,
+    tax_exempt: any
+}

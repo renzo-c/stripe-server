@@ -3,7 +3,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import { Stripe } from "stripe";
 import { v4 as uuidv4 } from "uuid";
-import { CartInfo, LineItem, Product, StripeSession } from './types';
+import { CartInfo, LineItem, Product, StripeSession, CustomerStripeObj } from './types';
 
 import env from "dotenv";
 
@@ -72,33 +72,48 @@ app.post("/payment", async (req: Request, res: Response, next: NextFunction) => 
 );
 
 app.post("/create-checkout-session", async (req: Request, res: Response, next: NextFunction) => {
-    const { cart, address, email } = req.body;
+    const { cart, address, email, stripeCustomerID } = req.body;
     const lineItems: LineItem[] = [];
 
+    /**
+     * Price validation
+     */
     const stripePrices = await stripe.prices.list();
-    console.log("stripePrices", stripePrices)
 
     const prices = stripePrices.data
+    //TODO: Possible bug since returns an empty array for the endpoint, test log
     if (!prices || prices.length === 0) return [];
 
     // Validates price for each product and builds lineItems array to use it in stripe sessions API 
     cart.forEach((product: Product) => {
-    const { id, name, quantity } = product;
-    const validPrice = prices.find((price) => price.product === id );
-    console.log("validPrice", validPrice)
+      const { id, name, quantity } = product;
+      const validPrice = prices.find((price) => price.product === id );
 
-    lineItems.push({
-        price_data: {
-        currency: "usd",
-        product_data: {
-            name,
-        },
-        unit_amount: validPrice !== undefined && typeof validPrice.unit_amount === 'number' ? validPrice.unit_amount : 0,
-        },
-        quantity,
-      });
+      lineItems.push({
+          price_data: {
+          currency: "usd",
+          product_data: {
+              name,
+          },
+          unit_amount: validPrice !== undefined && typeof validPrice.unit_amount === 'number' ? validPrice.unit_amount : 0,
+          },
+          quantity,
+        });
     });
-    console.log("lineItems", lineItems)
+
+    /**
+     * Create or use already created customer
+     */
+    let customer: CustomerStripeObj;
+    if (!stripeCustomerID) {
+      customer = await stripe.customers.create({
+        email,
+        address: { line1: address } // TODO: front should refactor address form so more attrs of address stripe customer address can be used
+      })
+      .then(result => result) as CustomerStripeObj
+    } else {
+      customer = await stripe.customers.update(stripeCustomerID, {email, address: {line1: address}}).then(res => res) as CustomerStripeObj;
+    }
 
     const session: StripeSession = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -106,12 +121,9 @@ app.post("/create-checkout-session", async (req: Request, res: Response, next: N
       mode: "payment",
       success_url: "https://www.visualdemand.co/?sc_checkout=success",
       cancel_url: "https://www.google.com/?sc_checkout=cancel",
-      customer_email: email,
-      metadata: {address}
+      customer: customer.id,
     });
-    res.json({ id: session.id, email: session.customer_email, address: session.metadata!.address });
-    
-    console.log("session", session)
+    res.json({ id: session.id, email: customer.email, address: customer.address?.line1, stripeCustomerID: customer.id });
   });
 
 app.use("/", (req, res, next) => {
